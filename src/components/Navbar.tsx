@@ -5,6 +5,7 @@ import { Heart, Menu, X, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import LoginModal from "./auth/LoginModal";
+import AdminLink from "./AdminLink";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +76,7 @@ const Navbar = () => {
               <Link to="/contact" className="text-sm font-medium hover:text-primary transition-colors">
                 Contact
               </Link>
+              <AdminLink />
             </div>
 
             {/* Auth Section */}
@@ -153,6 +155,7 @@ const Navbar = () => {
                 >
                   Contact
                 </Link>
+                <AdminLink />
                 {!user ? (
                   <Button onClick={() => setShowLoginModal(true)} className="w-full">
                     Login

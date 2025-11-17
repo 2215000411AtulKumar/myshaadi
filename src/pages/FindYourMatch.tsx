@@ -6,13 +6,48 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Profile {
+  id: string;
+  name: string;
+  age: number | null;
+  religion: string | null;
+  location: string | null;
+  bio: string | null;
+  image_url: string | null;
+}
 
 const FindYourMatch = () => {
   const { toast } = useToast();
-  const [connecting, setConnecting] = useState<number | null>(null);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleConnect = async (profileId: number) => {
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  const fetchProfiles = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load profiles.",
+        variant: "destructive",
+      });
+    } else {
+      setProfiles(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleConnect = async (profileId: string) => {
     setConnecting(profileId);
     
     const { data: { user } } = await supabase.auth.getUser();
@@ -36,63 +71,6 @@ const FindYourMatch = () => {
       setConnecting(null);
     }, 1000);
   };
-  // Mock profile data - in production, this would come from the database
-  const profiles = [
-    {
-      id: 1,
-      name: "Priya Sharma",
-      age: 28,
-      religion: "Hindu",
-      location: "Mumbai, India",
-      bio: "Software engineer with a passion for travel and photography. Looking for someone who shares similar interests.",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Ananya Reddy",
-      age: 26,
-      religion: "Hindu",
-      location: "Bangalore, India",
-      bio: "Doctor by profession, artist at heart. Love painting and classical music.",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      name: "Neha Patel",
-      age: 29,
-      religion: "Hindu",
-      location: "Delhi, India",
-      bio: "Business analyst who loves cooking and trying new cuisines. Foodie looking for a food partner!",
-      image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      name: "Riya Gupta",
-      age: 27,
-      religion: "Hindu",
-      location: "Pune, India",
-      bio: "Marketing professional with a creative mind. Enjoy yoga, books, and meaningful conversations.",
-      image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      name: "Kavya Iyer",
-      age: 25,
-      religion: "Hindu",
-      location: "Chennai, India",
-      bio: "Teacher who believes in making a difference. Love classical dance and children.",
-      image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=400&fit=crop",
-    },
-    {
-      id: 6,
-      name: "Isha Mehta",
-      age: 30,
-      religion: "Hindu",
-      location: "Ahmedabad, India",
-      bio: "Fashion designer with an eye for detail. Looking for someone who appreciates art and culture.",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
-    },
-  ];
 
   return (
     <div className="min-h-screen">
@@ -112,37 +90,54 @@ const FindYourMatch = () => {
         {/* Profiles Grid */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-xl text-muted-foreground">Loading profiles...</p>
+              </div>
+            ) : profiles.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-xl text-muted-foreground">No profiles available yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {profiles.map((profile) => (
                 <Card key={profile.id} className="border-2 hover:border-primary transition-all overflow-hidden">
                   <div className="relative">
                     <img
-                      src={profile.image}
+                      src={profile.image_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"}
                       alt={profile.name}
                       className="w-full h-64 object-cover"
                     />
-                    <div className="absolute top-4 right-4">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
-                        {profile.age} years
+                    {profile.age && (
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
+                          {profile.age} years
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   
                   <CardContent className="p-6 space-y-4">
                     <div>
                       <h3 className="text-2xl font-bold mb-2">{profile.name}</h3>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{profile.location}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {profile.religion}
-                      </p>
+                      {profile.location && (
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>{profile.location}</span>
+                        </div>
+                      )}
+                      {profile.religion && (
+                        <p className="text-sm text-muted-foreground">
+                          {profile.religion}
+                        </p>
+                      )}
                     </div>
 
-                    <p className="text-muted-foreground line-clamp-3">
-                      {profile.bio}
-                    </p>
+                    {profile.bio && (
+                      <p className="text-muted-foreground line-clamp-3">
+                        {profile.bio}
+                      </p>
+                    )}
 
                     <Button 
                       className="w-full" 
@@ -156,7 +151,8 @@ const FindYourMatch = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         </section>
       </main>
