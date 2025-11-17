@@ -4,8 +4,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const FindYourMatch = () => {
+  const { toast } = useToast();
+  const [connecting, setConnecting] = useState<number | null>(null);
+
+  const handleConnect = async (profileId: number) => {
+    setConnecting(profileId);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to connect with other members.",
+        variant: "destructive",
+      });
+      setConnecting(null);
+      return;
+    }
+
+    // Simulate connection request (will be replaced with actual database call later)
+    setTimeout(() => {
+      toast({
+        title: "Connection Sent!",
+        description: "Your connection request has been sent successfully.",
+      });
+      setConnecting(null);
+    }, 1000);
+  };
   // Mock profile data - in production, this would come from the database
   const profiles = [
     {
@@ -114,9 +144,14 @@ const FindYourMatch = () => {
                       {profile.bio}
                     </p>
 
-                    <Button className="w-full" size="lg">
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => handleConnect(profile.id)}
+                      disabled={connecting === profile.id}
+                    >
                       <Heart className="mr-2 h-4 w-4" />
-                      Connect
+                      {connecting === profile.id ? "Connecting..." : "Connect"}
                     </Button>
                   </CardContent>
                 </Card>
